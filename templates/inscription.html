@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscription</title>
+    <link rel="stylesheet" href="{% static 'css/inscription.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Créer un compte</h1>
+        <p>Vos identités restent anonymes et vos réponses ne seront utilisées uniquement à des fins de recherche dans le cadre d’un mémoire.</p>
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- Nom d'utilisateur -->
+            {{ form.username.label_tag }}
+            {{ form.username }}
+
+            <!-- Email -->
+            {{ form.email.label_tag }}
+            {{ form.email }}
+
+            <!-- Poste (champ simple rendu par Django) -->
+            {{ form.poste.label_tag }}
+            {{ form.poste }}
+
+            <!-- Tranche d'âge -->
+            {{ form.tranche_age.label_tag }}
+            {{ form.tranche_age }}
+
+            <!-- Expérience -->
+            {{ form.experience.label_tag }}
+            {{ form.experience }}
+
+            <!-- Bouton -->
+            <button type="submit">S'inscrire</button>
+
+            <!-- Affichage des erreurs -->
+            {% if form.errors %}
+                <ul class="form-errors">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }} : {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </form>
+    </div>
+</body>
+</html>

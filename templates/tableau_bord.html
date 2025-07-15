@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tableau de bord - {{ categorie }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/tableau_bord.css' %}">
+</head>
+<body>
+    <h2>Tableau de bord - {{ user.profile.poste.nom }}</h2>
+
+    <!-- Bloc mémoire -->
+    <div class="intro-box">
+        <h4>Les pratiques comptables face aux enjeux de l’intelligence artificielle</h4>
+        <p>
+            Nous sommes à une époque où la technologie joue un rôle central et influence de nombreux secteurs d’activités, 
+            particulièrement celui du chiffre. En tenant compte des changements à venir, les organisations connaîtront un 
+            bouleversement de leur modèle économique, remettant en question la valeur ajoutée du secteur comptable.
+        </p>
+        <p>
+            L'idée proposée dans le cadre de ce mémoire de recherche est d’étudier une éventuelle reconstitution de la gouvernance menée 
+            au sein des cabinets comptables au vu des évolutions technologiques. Les défis et les opportunités de l’IA seront les 
+            principales sources stratégiques qui nécessiteront cette réforme.
+        </p>
+        <p>
+            L’IA contribuera donc à apporter une valeur ajoutée au secteur comptable, à renforcer la proposition de valeur et à assurer 
+            la pérennité de l’entreprise, mais aussi des acteurs comptables dans un environnement en pleine mutation.
+        </p>
+        <p><strong>Des questionnaires vous sont proposés ci-dessous afin de valider ou non certaines hypothèses de recherches.</strong></p>
+        <p><em>Merci de prendre le temps de répondre. Vos réponses contribueront à une recherche académique dans le cadre du DSCG.</em></p>
+    </div>
+
+    {% if user.is_superuser %}
+        <a href="{% url 'sondagepro:questionnaire_create' %}" class="btn">
+            + Créer un questionnaire
+        </a>
+    {% endif %}
+
+    <h3>Questionnaires disponibles</h3>
+
+    {% if questionnaires %}
+    <table>
+        <thead>
+            <tr>
+                <th>Titre</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for questionnaire in questionnaires %}
+            <tr>
+                <td>
+                    <a href="{% url 'sondagepro:questionnaire_detail' questionnaire.id %}">
+                        {{ questionnaire.titre }}
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p class="no-sondage">Aucun questionnaire disponible pour votre profil.</p>
+    {% endif %}
+
+    {% if user.is_superuser %}
+        <div class="admin-results">
+            <a href="{% url 'sondagepro:resultats_global' %}">📊 Voir les résultats globaux</a>
+        </div>
+    {% endif %}
+</body>
+</html>

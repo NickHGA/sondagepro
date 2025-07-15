@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Résultats : {{ sondage.question }}</h2>
+    {% if chart_type == 'bar' %}
+        <canvas id="resultatsChart" width="400" height="400"></canvas>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const ctx = document.getElementById('resultatsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: {{ labels|safe }},
+                    datasets: [{
+                        label: 'Votes',
+                        data: {{ data|safe }},
+                        backgroundColor: ['#26a69a', '#4dd0e1', '#80deea', '#b2ebf2'],
+                        borderColor: '#006064',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: '{{ sondage.question }}',
+                            color: '#006064',
+                            font: { size: 18, family: 'Roboto' }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        </script>
+    {% elif chart_type == 'matching' %}
+        <table class="result-table">
+            <thead>
+                <tr>
+                    <th>Élément</th>
+                    <th>Paire correspondante</th>
+                    <th>Réponses correctes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for choix in choix %}
+                    <tr>
+                        <td>{{ choix.texte }}</td>
+                        <td>{{ choix.matching_pair }}</td>
+                        <td>{{ choix.votes }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% elif chart_type == 'open' %}
+        <h3>Réponses</h3>
+        <ul class="reponse-list">
+            {% for reponse in reponses %}
+                <li>{{ reponse }}</li>
+            {% endfor %}
+        </ul>
+    {% elif chart_type == 'wordcloud' %}
+        <canvas id="wordCloudChart" width="400" height="400"></canvas>
+        <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
+        <script>
+            const words = {{ reponses|safe }}.map(word => [word, Math.floor(Math.random() * 10) + 1]);
+            WordCloud(document.getElementById('wordCloudChart'), {
+                list: words,
+                gridSize: 8,
+                weightFactor: 15,
+                fontFamily: 'Roboto',
+                color: '#26a69a',
+                backgroundColor: '#e0f7fa',
+                rotateRatio: 0.5
+            });
+        </script>
+    {% elif chart_type == 'fill_blanks' %}
+        <h3>Réponses (Correcte : {{ correct_answer }})</h3>
+        <ul class="reponse-list">
+            {% for reponse in reponses %}
+                <li>{{ reponse }} {% if reponse == correct_answer %}<span class="correct">(Correct)</span>{% endif %}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

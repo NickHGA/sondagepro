@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>{{ sondage.question }}</h2>
+    <form method="post" class="form">
+        {% csrf_token %}
+        {% if sondage.type_question == 'multiple' %}
+            {% for choix in sondage.choix.all %}
+                <label>
+                    <input type="radio" name="choix" value="{{ choix.id }}" required>
+                    {{ choix.texte }}
+                </label><br>
+            {% endfor %}
+        {% elif sondage.type_question == 'matching' %}
+            {% for choix in sondage.choix.all %}
+                <label>
+                    {{ choix.texte }} :
+                    <select name="choix" required>
+                        {% for pair in sondage.choix.all %}
+                            <option value="{{ pair.id }}">{{ pair.matching_pair }}</option>
+                        {% endfor %}
+                    </select>
+                </label><br>
+            {% endfor %}
+        {% elif sondage.type_question in 'open,wordcloud,fill_blanks' %}
+            <label>
+                Votre réponse :<br>
+                <textarea name="reponse_texte" rows="4" cols="50" required></textarea>
+            </label><br>
+        {% endif %}
+        <button type="submit" class="btn"><i class="fas fa-vote-yea"></i> Soumettre</button>
+    </form>
+{% endblock %}

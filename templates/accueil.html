@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Bienvenue sur SondagePro</h2>
+    <p>Créez, gérez et participez à des sondages professionnels en toute simplicité.</p>
+    <a href="{% url 'sondagepro:inscription' %}" class="btn">S'inscrire</a>
+    <a href="{% url 'sondagepro:connexion' %}" class="btn">Se connecter</a>
+{% endblock %}
