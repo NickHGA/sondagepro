@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% block title %}Présentation Live - {{ questionnaire.titre }} - SondagePro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .live-dashboard {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 30px;
+        margin-top: 20px;
+        margin-bottom: 40px;
+        align-items: stretch;
+    }
+
+    .live-info-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: white;
+        padding: 35px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .live-info-card h2 {
+        color: white;
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 1.8rem;
+        font-weight: 800;
+    }
+
+    .pin-display {
+        font-size: 2.8rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        color: #818cf8;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 12px 24px;
+        border-radius: var(--radius-md);
+        display: inline-block;
+        margin: 15px 0;
+        font-family: monospace;
+        border: 1px dashed rgba(129, 140, 248, 0.3);
+    }
+
+    .qr-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        text-align: center;
+        box-shadow: var(--shadow-md);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .qr-image {
+        width: 170px;
+        height: 170px;
+        margin-bottom: 15px;
+        border: 1px solid #e2e8f0;
+        padding: 8px;
+        border-radius: 8px;
+        background: white;
+    }
+
+    .live-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 15px;
+        width: fit-content;
+    }
+
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #ef4444;
+        border-radius: 50%;
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+        }
+        70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+        }
+        100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        }
+    }
+
+    .question-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .question-header {
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .vote-bar-container {
+        display: flex;
+        align-items: center;
+        margin-top: 8px;
+        gap: 15px;
+    }
+
+    .vote-bar-bg {
+        flex-grow: 1;
+        background-color: #f1f5f9;
+        height: 16px;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .vote-bar-fill {
+        background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+        height: 100%;
+        border-radius: 8px;
+        width: 0%;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .text-responses-box {
+        background-color: #f8fafc;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+    .text-response-item {
+        background: white;
+        padding: 12px 16px;
+        border-radius: var(--radius-md);
+        border-left: 4px solid #4f46e5;
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+
+    .text-response-item:last-child {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 768px) {
+        .live-dashboard {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 25px;">
+    <a href="{% url 'sondagepro:tableau_bord' %}" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+        ← Retour à mon espace
+    </a>
+</div>
+
+<div class="live-dashboard">
+    <div class="live-info-card">
+        <div class="live-indicator">
+            <div class="pulse-dot"></div>
+            <span>Présentation en direct</span>
+        </div>
+        <h2>{{ questionnaire.titre }}</h2>
+        <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 10px;">Les participants peuvent rejoindre sur cette page avec le code :</p>
+        <div>
+            <span class="pin-display" id="pin-code">{{ questionnaire.code }}</span>
+        </div>
+        <p style="margin-top: 10px; font-size: 1.1rem;">
+            👤 <strong id="live-respondents-count">0</strong> participant(s) connecté(s)
+        </p>
+    </div>
+
+    <div class="qr-card">
+        <!-- Génération dynamique du QR code de participation via API gratuite publique sécurisée -->
+        <img class="qr-image" id="qr-code-img" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" alt="QR Code de participation">
+        <p style="margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">
+            Scannez pour voter instantanément 📱
+        </p>
+    </div>
+</div>
+
+<div id="questions-container">
+    {% for r in results %}
+        <div class="question-card" id="question-card-{{ r.question.id }}">
+            <div class="question-header">
+                <span>{{ forloop.counter }}. {{ r.question.texte }}</span>
+                <span style="font-size: 0.85rem; font-weight: 600; padding: 4px 8px; background: #e0e7ff; color: #4f46e5; border-radius: 12px; white-space: nowrap;" id="question-total-{{ r.question.id }}">
+                    0 vote(s)
+                </span>
+            </div>
+            
+            {% if r.type == 'multiple' or r.type == 'matching' %}
+                <div style="display: flex; flex-direction: column; gap: 14px;" id="choices-container-{{ r.question.id }}">
+                    {% for c in r.data %}
+                        <div id="choice-wrapper-{{ c.id }}">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-secondary);">
+                                <span>{{ c.texte }}</span>
+                                <span style="font-weight: 600; color: var(--text-primary);" id="choice-stats-{{ c.id }}">
+                                    0% (0 vote)
+                                </span>
+                            </div>
+                            <div class="vote-bar-container">
+                                <div class="vote-bar-bg">
+                                    <div class="vote-bar-fill" id="choice-bar-{{ c.id }}" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-responses-box">
+                    <div id="text-list-{{ r.question.id }}">
+                        <p style="color: var(--text-muted); margin: 0; font-size: 0.95rem;" class="no-responses">En attente de réponses...</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div class="card" style="text-align: center; padding: 40px;">
+            <p style="color: var(--text-muted); margin: 0;">Aucune question dans ce questionnaire.</p>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const code = document.getElementById("pin-code").innerText.trim();
+    const origin = window.location.origin;
+    const directUrl = `${origin}/s/${code}/`;
+    
+    // Configurer le QR code dynamique
+    document.getElementById("qr-code-img").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(directUrl)}`;
+    
+    const questionnaireId = "{{ questionnaire.id }}";
+    const liveDataUrl = `{% url 'sondagepro:resultats_live_data' questionnaire.id %}`;
+    
+    // Fonction de rafraîchissement
+    function fetchLiveData() {
+        fetch(liveDataUrl)
+            .then(response => response.json())
+            .then(data => {
+                // 1. Mettre à jour le compteur global de répondants
+                document.getElementById("live-respondents-count").innerText = data.total_repondants;
+                
+                // 2. Mettre à jour chaque question
+                data.questions.forEach(q => {
+                    // Total votes de la question
+                    const qTotalEl = document.getElementById(`question-total-${q.id}`);
+                    if (qTotalEl) {
+                        qTotalEl.innerText = `${q.total_votes || 0} vote(s)`;
+                    }
+                    
+                    if (q.type === 'choix') {
+                        // Choix multiple
+                        q.choix.forEach(c => {
+                            const barEl = document.getElementById(`choice-bar-${c.id}`);
+                            const statsEl = document.getElementById(`choice-stats-${c.id}`);
+                            if (barEl) {
+                                barEl.style.width = `${c.pct}%`;
+                            }
+                            if (statsEl) {
+                                statsEl.innerText = `${c.pct}% (${c.votes} vote${c.votes > 1 ? 's' : ''})`;
+                            }
+                        });
+                    } else if (q.type === 'texte') {
+                        // Question ouverte
+                        const listEl = document.getElementById(`text-list-${q.id}`);
+                        if (listEl) {
+                            if (q.reponses.length > 0) {
+                                // Remplacer le contenu
+                                let html = '';
+                                q.reponses.forEach(text => {
+                                    html += `<div class="text-response-item">« ${escapeHTML(text)} »</div>`;
+                                });
+                                listEl.innerHTML = html;
+                            } else {
+                                listEl.innerHTML = `<p style="color: var(--text-muted); margin: 0; font-size: 0.95rem;" class="no-responses">En attente de réponses...</p>`;
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error("Erreur lors de la récupération des données live:", err));
+    }
+    
+    // Utilitaire d'échappement HTML pour éviter les injections XSS
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
+    }
+    
+    // Lancer immédiatement la récupération des données, puis toutes les 1.5 secondes
+    fetchLiveData();
+    setInterval(fetchLiveData, 1500);
+});
+</script>
+{% endblock %}

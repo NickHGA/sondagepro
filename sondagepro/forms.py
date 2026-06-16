@@ -1,8 +1,25 @@
 from django import forms
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth.forms import UserCreationForm
 from .models import Profile, Questionnaire, Choix, Poste
 
 User = get_user_model()
+
+class CreatorCreationForm(UserCreationForm):
+    email = forms.EmailField(required=False, label="Adresse e-mail (optionnel)")
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = UserCreationForm.Meta.fields + ('email',)
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data.get('email', '')
+        if commit:
+            user.save()
+            Profile.objects.get_or_create(user=user)
+        return user
+
 
 class CustomUserCreationForm(forms.ModelForm):
     poste = forms.ModelChoiceField(
@@ -41,15 +58,20 @@ class CustomUserCreationForm(forms.ModelForm):
 
 class EmailLoginForm(forms.Form):
     identifiant = forms.CharField(label="Nom d'utilisateur ou email")
+    mot_de_passe = forms.CharField(
+        label="Mot de passe (admin uniquement)",
+        widget=forms.PasswordInput(attrs={'autocomplete': 'current-password'}),
+        required=False,
+        help_text="Laissez vide si vous êtes un participant."
+    )
 
 
 class QuestionnaireForm(forms.ModelForm):
     class Meta:
         model = Questionnaire
-        fields = ['titre', 'description', 'postes_cibles']
+        fields = ['titre', 'description']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
-            'postes_cibles': forms.CheckboxSelectMultiple(),
         }
 
 

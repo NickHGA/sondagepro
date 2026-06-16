@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Questionnaires — Admin SondagePro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-nav {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 35px;
+        flex-wrap: wrap;
+    }
+    .admin-nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        color: var(--text-secondary);
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .admin-nav a:hover, .admin-nav a.active {
+        background: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+    }
+    .q-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        padding: 24px 28px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .q-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+    .q-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .q-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+    .q-badge strong {
+        color: var(--primary-color);
+        font-size: 1.1rem;
+    }
+    .postes-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .badge-poste {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 2px 9px;
+        border-radius: 99px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- En-tête -->
+<div style="margin-bottom: 30px;">
+    <a href="{% url 'sondagepro:admin_dashboard' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">← Dashboard</a>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
+        <div>
+            <h1 style="margin: 0; font-size: 2rem;">Questionnaires</h1>
+            <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.9rem;">{{ data|length }} questionnaire{{ data|length|pluralize }} au total</p>
+        </div>
+        <a href="{% url 'sondagepro:questionnaire_create' %}" class="btn" style="font-size: 0.9rem;">
+            ✚ Nouveau questionnaire
+        </a>
+    </div>
+</div>
+
+<!-- Navigation admin -->
+<nav class="admin-nav">
+    <a href="{% url 'sondagepro:admin_dashboard' %}">📊 Dashboard</a>
+    <a href="{% url 'sondagepro:admin_utilisateurs' %}">👥 Utilisateurs</a>
+    <a href="{% url 'sondagepro:admin_questionnaires' %}" class="active">📋 Questionnaires</a>
+    <a href="{% url 'sondagepro:resultats_global' %}">📈 Résultats globaux</a>
+</nav>
+
+<!-- Liste des questionnaires -->
+{% for item in data %}
+<div class="q-card">
+    <div style="flex: 1; min-width: 0;">
+        <div style="font-size: 1.1rem; font-weight: 600; color: var(--primary-color); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            📋 {{ item.questionnaire.titre }}
+        </div>
+        {% if item.questionnaire.description %}
+            <p style="margin: 0 0 10px 0; font-size: 0.88rem; color: var(--text-muted);">{{ item.questionnaire.description|truncatewords:18 }}</p>
+        {% endif %}
+        <div class="q-meta">
+            <div class="q-badge">
+                👥 <strong>{{ item.nb_repondants }}</strong> répondant{{ item.nb_repondants|pluralize }}
+            </div>
+            <div class="q-badge">
+                ❓ <strong>{{ item.nb_questions }}</strong> question{{ item.nb_questions|pluralize }}
+            </div>
+        </div>
+        {% if item.questionnaire.postes_cibles.all %}
+            <div class="postes-list">
+                {% for p in item.questionnaire.postes_cibles.all %}
+                    <span class="badge-poste">{{ p.nom }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="actions">
+        <a href="{% url 'sondagepro:resultats_questionnaire' item.questionnaire.id %}" class="btn btn-secondary" style="font-size: 0.85rem; padding: 8px 14px;">
+            📊 Résultats
+        </a>
+        <a href="{% url 'sondagepro:questionnaire_detail' item.questionnaire.id %}" class="btn btn-secondary" style="font-size: 0.85rem; padding: 8px 14px;">
+            Voir →
+        </a>
+    </div>
+</div>
+{% empty %}
+<div class="card" style="text-align: center; padding: 50px; border-style: dashed; background: transparent;">
+    <p style="margin: 0; color: var(--text-muted);">Aucun questionnaire créé pour l'instant.</p>
+    <a href="{% url 'sondagepro:questionnaire_create' %}" class="btn" style="margin-top: 20px; display: inline-flex;">
+        ✚ Créer le premier questionnaire
+    </a>
+</div>
+{% endfor %}
+{% endblock %}

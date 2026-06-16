@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Utilisateurs — Admin SondagePro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-nav {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 35px;
+        flex-wrap: wrap;
+    }
+    .admin-nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        color: var(--text-secondary);
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .admin-nav a:hover, .admin-nav a.active {
+        background: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+    }
+    .filter-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 25px;
+        align-items: flex-end;
+    }
+    .filter-bar select {
+        width: auto;
+        padding: 8px 12px;
+        font-size: 0.88rem;
+    }
+    .filter-bar label {
+        font-size: 0.8rem;
+        margin-bottom: 4px;
+        display: block;
+    }
+    .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 99px;
+        font-size: 0.78rem;
+        font-weight: 500;
+    }
+    .badge-gray  { background: #f1f5f9; color: #64748b; }
+    .badge-blue  { background: #eff6ff; color: #1d4ed8; }
+    .user-count {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- En-tête -->
+<div style="margin-bottom: 30px;">
+    <a href="{% url 'sondagepro:admin_dashboard' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">← Dashboard</a>
+    <h1 style="margin: 10px 0 4px 0; font-size: 2rem;">Utilisateurs</h1>
+    <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Gestion et visualisation des participants</p>
+</div>
+
+<!-- Navigation admin -->
+<nav class="admin-nav">
+    <a href="{% url 'sondagepro:admin_dashboard' %}">📊 Dashboard</a>
+    <a href="{% url 'sondagepro:admin_utilisateurs' %}" class="active">👥 Utilisateurs</a>
+    <a href="{% url 'sondagepro:admin_questionnaires' %}">📋 Questionnaires</a>
+    <a href="{% url 'sondagepro:resultats_global' %}">📈 Résultats globaux</a>
+</nav>
+
+<!-- Filtres -->
+<div class="card" style="padding: 20px 25px; margin-bottom: 20px;">
+    <form method="get" style="flex-direction: row;" class="filter-bar">
+        <div>
+            <label>Poste</label>
+            <select name="poste" onchange="this.form.submit()">
+                <option value="">Tous les postes</option>
+                {% for p in postes %}
+                    <option value="{{ p.code }}" {% if poste_filtre == p.code %}selected{% endif %}>{{ p.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Tranche d'âge</label>
+            <select name="age" onchange="this.form.submit()">
+                <option value="">Toutes</option>
+                {% for val, label in tranches_age %}
+                    <option value="{{ val }}" {% if age_filtre == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Expérience</label>
+            <select name="experience" onchange="this.form.submit()">
+                <option value="">Toutes</option>
+                {% for val, label in experiences %}
+                    <option value="{{ val }}" {% if exp_filtre == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if poste_filtre or age_filtre or exp_filtre %}
+            <div style="display: flex; align-items: flex-end;">
+                <a href="{% url 'sondagepro:admin_utilisateurs' %}" class="btn btn-secondary" style="font-size: 0.85rem; padding: 8px 14px;">✕ Réinitialiser</a>
+            </div>
+        {% endif %}
+    </form>
+</div>
+
+<p class="user-count">{{ utilisateurs|length }} utilisateur{{ utilisateurs|length|pluralize }} trouvé{{ utilisateurs|length|pluralize }}</p>
+
+<!-- Tableau des utilisateurs -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+        <thead>
+            <tr>
+                <th>Utilisateur</th>
+                <th>Email</th>
+                <th>Poste</th>
+                <th>Âge</th>
+                <th>Expérience</th>
+                <th>Inscrit le</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in utilisateurs %}
+            <tr>
+                <td style="font-weight: 600; color: var(--primary-color);">{{ u.username }}</td>
+                <td style="font-size: 0.88rem; color: var(--text-secondary);">{{ u.email|default:"—" }}</td>
+                <td>
+                    {% if u.profile.poste %}
+                        <span class="badge badge-gray">{{ u.profile.poste.nom }}</span>
+                    {% else %}
+                        <span style="color: var(--text-muted);">—</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.88rem; color: var(--text-secondary);">{{ u.profile.get_tranche_age_display }}</td>
+                <td style="font-size: 0.88rem; color: var(--text-secondary);">{{ u.profile.get_experience_display }}</td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">{{ u.date_joined|date:"d/m/Y" }}</td>
+                <td>
+                    <a href="{% url 'sondagepro:admin_utilisateur_detail' u.id %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 5px 12px;">
+                        Voir →
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">Aucun utilisateur trouvé.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

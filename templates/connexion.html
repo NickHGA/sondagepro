@@ -1,31 +1,178 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Connexion</title>
-    <link rel="stylesheet" href="{% static 'css/connexion.css' %}">
-</head>
-<body>
-    <div class="container">
-        <h1>Connexion</h1>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Se connecter</button>
-            {% if form.errors %}
-    <ul class="form-errors">
-        {% for field in form %}
-            {% for error in field.errors %}
-                <li>{{ field.label }} : {{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-        {% for error in form.non_field_errors %}
-            <li>{{ error }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
-        </form>
-    </div>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Connexion - SondagePro{% endblock %}
+
+{% block extra_css %}
+<style>
+    #admin-section {
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.4s ease, opacity 0.3s ease;
+    }
+    #admin-section.visible {
+        max-height: 200px;
+        opacity: 1;
+    }
+    .admin-divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 5px 0 8px 0;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .admin-divider.visible {
+        opacity: 1;
+    }
+    .admin-divider-line {
+        flex: 1;
+        height: 1px;
+        background: var(--border-color);
+    }
+    .admin-divider-label {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    #identifiant-field {
+        transition: border-color 0.2s;
+    }
+    .checking-indicator {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 5px;
+        height: 18px;
+        transition: opacity 0.2s;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 420px; margin: 40px auto; padding: 40px 35px;">
+    <h2 style="text-align: center; margin-bottom: 6px; font-weight: 700;">Connexion</h2>
+    <p style="text-align: center; color: var(--text-muted); font-size: 0.88rem; margin-bottom: 30px;">
+        Identifiez-vous avec votre nom d'utilisateur ou votre e-mail. Les créateurs utilisent un mot de passe.
+    </p>
+
+    <form method="post" id="login-form">
+        {% csrf_token %}
+
+        <!-- Identifiant -->
+        <div>
+            <label for="{{ form.identifiant.id_for_label }}" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                Nom d'utilisateur ou e-mail
+            </label>
+            {{ form.identifiant }}
+            <div class="checking-indicator" id="checking-msg"></div>
+        </div>
+
+        <!-- Section admin (cachée par défaut) -->
+        <div class="admin-divider" id="admin-divider">
+            <div class="admin-divider-line"></div>
+            <span class="admin-divider-label">⚙️ Créateur / Administrateur</span>
+            <div class="admin-divider-line"></div>
+        </div>
+
+        <div id="admin-section">
+            <div style="padding-bottom: 5px;">
+                <label for="{{ form.mot_de_passe.id_for_label }}" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                    Mot de passe
+                </label>
+                {{ form.mot_de_passe }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn" style="margin-top: 15px; padding: 12px; font-size: 1rem; width: 100%;">
+            Se connecter
+        </button>
+
+        {% if form.errors %}
+            <ul class="form-errors" style="margin-top: 15px;">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </form>
+
+    <p style="text-align: center; margin-top: 25px; font-size: 0.9rem;">
+        Pas encore inscrit ? <a href="{% url 'sondagepro:inscription' %}" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">Créer un compte</a>
+    </p>
+</div>
+
+<script>
+(function () {
+    const identifiantInput = document.getElementById('{{ form.identifiant.id_for_label }}');
+    const adminSection     = document.getElementById('admin-section');
+    const adminDivider     = document.getElementById('admin-divider');
+    const checkingMsg      = document.getElementById('checking-msg');
+    const passwordInput    = document.getElementById('{{ form.mot_de_passe.id_for_label }}');
+    const csrfToken        = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const checkUrl         = "{% url 'sondagepro:check_superuser' %}";
+
+    let debounceTimer = null;
+
+    function showAdminSection(show) {
+        if (show) {
+            adminSection.classList.add('visible');
+            adminDivider.classList.add('visible');
+            passwordInput.focus();
+        } else {
+            adminSection.classList.remove('visible');
+            adminDivider.classList.remove('visible');
+            passwordInput.value = '';
+        }
+    }
+
+    function checkUser(identifiant) {
+        if (!identifiant.trim()) {
+            showAdminSection(false);
+            checkingMsg.textContent = '';
+            return;
+        }
+
+        checkingMsg.textContent = '…';
+
+        fetch(checkUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+            },
+            body: 'identifiant=' + encodeURIComponent(identifiant),
+        })
+        .then(r => r.json())
+        .then(data => {
+            checkingMsg.textContent = '';
+            showAdminSection(data.is_superuser);
+        })
+        .catch(() => {
+            checkingMsg.textContent = '';
+        });
+    }
+
+    identifiantInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => checkUser(this.value), 400);
+    });
+
+    // Si le champ est déjà rempli (ex : rechargement après erreur), vérifier immédiatement
+    if (identifiantInput.value) {
+        checkUser(identifiantInput.value);
+    }
+
+    // Si erreur sur le mot de passe, garder la section ouverte
+    {% if form.mot_de_passe.errors %}
+    showAdminSection(true);
+    {% endif %}
+})();
+</script>
+{% endblock %}

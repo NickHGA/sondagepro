@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block title %}Modifier le Questionnaire - {{ questionnaire.titre }} - SondagePro{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <a href="{% url 'sondagepro:tableau_bord' %}" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+            ← Retour au tableau de bord
+        </a>
+        <h1 style="margin-top: 10px; margin-bottom: 5px;">{{ questionnaire.titre }}</h1>
+        <p style="margin: 0; font-size: 0.95rem;">Code d'accès participant : <strong style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 1.1rem; color: var(--primary-color);">{{ questionnaire.code }}</strong></p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{% url 'sondagepro:resultats_questionnaire' questionnaire.id %}" class="btn btn-secondary" target="_blank">
+            🖥️ Écran Présentation Live
+        </a>
+        <a href="{% url 'sondagepro:sondage_detail' questionnaire.code %}" class="btn" target="_blank" style="background-color: #059669;">
+            🔗 Tester le vote
+        </a>
+    </div>
+</div>
+
+{% if questionnaire.description %}
+<div class="card" style="padding: 20px; background-color: #f8fafc; border-left: 4px solid var(--accent-color); margin-bottom: 30px;">
+    <p style="margin: 0; font-style: italic; color: var(--text-secondary);">{{ questionnaire.description }}</p>
+</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px; align-items: start;">
+    
+    <!-- Liste des Questions -->
+    <div>
+        <h2 style="margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span>Questions existantes</span>
+            <span style="font-size: 1rem; font-weight: normal; background-color: var(--primary-color); color: white; padding: 2px 8px; border-radius: 12px;">{{ questions|length }}</span>
+        </h2>
+        
+        {% if not questions %}
+            <div class="card" style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                <div style="font-size: 3rem; margin-bottom: 15px;">📝</div>
+                <p style="margin-bottom: 0; font-weight: 500;">Aucune question dans ce questionnaire pour le moment.</p>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">Utilisez le formulaire à droite pour ajouter votre première question !</p>
+            </div>
+        {% else %}
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                {% for question in questions %}
+                    <div class="card" style="position: relative; margin-bottom: 0; padding: 25px;">
+                        <!-- Delete Button in corner -->
+                        <form action="{% url 'sondagepro:question_delete' question.id %}" method="post" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette question ?');" style="position: absolute; top: 20px; right: 20px; margin: 0;">
+                            {% csrf_token %}
+                            <button type="submit" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer; padding: 5px; transition: transform 0.2s;" title="Supprimer la question" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                                🗑️
+                            </button>
+                        </form>
+                        
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
+                            <span style="font-weight: 600; color: var(--text-secondary); background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 0.85rem;">
+                                Q{{ forloop.counter }}
+                            </span>
+                            <span style="font-size: 0.85rem; font-weight: 500; background: #eff6ff; color: #2563eb; padding: 3px 8px; border-radius: 4px;">
+                                {% if question.type_question == 'multiple' %}Choix multiple
+                                {% elif question.type_question == 'open' %}Question ouverte
+                                {% elif question.type_question == 'wordcloud' %}Nuage de mots
+                                {% elif question.type_question == 'matching' %}Correspondance
+                                {% elif question.type_question == 'fill_blanks' %}Remplir les blancs
+                                {% endif %}
+                            </span>
+                            <span style="font-size: 0.85rem; font-weight: 500; background: #fff7ed; color: #ea580c; padding: 3px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                                ⏱️ {% if question.temps_limite > 0 %}{{ question.temps_limite }}s{% else %}Sans limite{% endif %}
+                            </span>
+                        </div>
+                        
+                        <h3 style="margin: 0 0 15px 0; color: var(--text-primary); padding-right: 30px; font-size: 1.15rem; font-weight: 600;">
+                            {{ question.texte }}
+                        </h3>
+                        
+                        {% if question.type_question in 'multiple matching fill_blanks' %}
+                            <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 15px;">
+                                <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px;">
+                                    {% for c in question.choix.all %}
+                                        <li style="font-size: 0.95rem; color: var(--text-secondary);">
+                                            <span style="font-weight: 500; color: var(--text-primary);">{{ c.texte }}</span>
+                                            {% if question.type_question == 'matching' and c.matching_pair %}
+                                                <span style="color: var(--text-muted);">↔</span> <span style="background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; font-weight: 500; color: #64748b;">{{ c.matching_pair }}</span>
+                                            {% endif %}
+                                            {% if c.is_correct %}
+                                                <span style="margin-left: 5px; color: #10b981; font-weight: 600; font-size: 0.85rem; background-color: #ecfdf5; padding: 2px 6px; border-radius: 4px;">✓ Correct</span>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Formulaire d'Ajout de Question -->
+    <div style="position: sticky; top: 30px;">
+        <div class="card" style="padding: 30px;">
+            <h2 style="margin-top: 0; margin-bottom: 25px;">Ajouter une question</h2>
+            
+            <form action="{% url 'sondagepro:question_add' questionnaire.id %}" method="post" id="add-question-form">
+                {% csrf_token %}
+                
+                <div>
+                    <label for="texte">Question</label>
+                    <input type="text" id="texte" name="texte" placeholder="Ex: Quelle est la capitale de la France ?" required>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label for="type_question">Type de question</label>
+                        <select id="type_question" name="type_question">
+                            <option value="multiple">Choix multiple</option>
+                            <option value="open">Question ouverte</option>
+                            <option value="wordcloud">Nuage de mots</option>
+                            <option value="matching">Correspondance</option>
+                            <option value="fill_blanks">Remplir les blancs</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="temps_limite">Limite de temps</label>
+                        <select id="temps_limite" name="temps_limite">
+                            <option value="0">Sans limite</option>
+                            <option value="10">10 secondes</option>
+                            <option value="20" selected>20 secondes</option>
+                            <option value="30">30 secondes</option>
+                            <option value="60">1 minute</option>
+                            <option value="120">2 minutes</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Section des choix (Dynamique) -->
+                <div id="choices-section" style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="margin: 0;">Options de réponse</label>
+                        <button type="button" id="btn-add-choice" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem; border-radius: 4px;">
+                            ＋ Ajouter un choix
+                        </button>
+                    </div>
+                    
+                    <div id="choices-container" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px;">
+                        <!-- Les choix seront injectés en JS -->
+                    </div>
+                    
+                    <p id="choices-info" style="font-size: 0.85rem; color: var(--text-muted); margin: 0; line-height: 1.4;"></p>
+                </div>
+                
+                <button type="submit" class="btn" style="margin-top: 10px; padding: 12px; width: 100%;">
+                    Ajouter la question au Quiz
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const typeSelect = document.getElementById("type_question");
+        const choicesSection = document.getElementById("choices-section");
+        const choicesContainer = document.getElementById("choices-container");
+        const addChoiceBtn = document.getElementById("btn-add-choice");
+        const infoText = document.getElementById("choices-info");
+        
+        let choiceIndex = 0;
+        
+        // Liste des placeholders pré-définis
+        const placeholders = [
+            "Option A", "Option B", "Option C", "Option D", "Option E", "Option F"
+        ];
+        
+        function createChoiceRow(text = "", correct = false, pair = "") {
+            const index = choiceIndex++;
+            const div = document.createElement("div");
+            div.className = "choice-row";
+            div.style.display = "grid";
+            div.style.gridTemplateColumns = "1fr auto auto";
+            div.style.gap = "10px";
+            div.style.alignItems = "center";
+            div.style.backgroundColor = "#f8fafc";
+            div.style.padding = "10px";
+            div.style.borderRadius = "var(--radius-md)";
+            div.style.border = "1px solid var(--border-color)";
+            div.dataset.index = index;
+            
+            // Partie gauche : texte et optionnel matching pair
+            const leftCol = document.createElement("div");
+            leftCol.style.display = "flex";
+            leftCol.style.flexDirection = "column";
+            leftCol.style.gap = "8px";
+            
+            const textInput = document.createElement("input");
+            textInput.type = "text";
+            textInput.name = `choix_texte_${index}`;
+            textInput.value = text;
+            textInput.placeholder = placeholders[index % placeholders.length];
+            textInput.required = true;
+            textInput.style.backgroundColor = "#ffffff";
+            leftCol.appendChild(textInput);
+            
+            const pairInput = document.createElement("input");
+            pairInput.type = "text";
+            pairInput.name = `choix_matching_${index}`;
+            pairInput.value = pair;
+            pairInput.placeholder = "Paire correspondante (ex: France ↔ Paris)";
+            pairInput.style.backgroundColor = "#ffffff";
+            pairInput.className = "matching-pair-input";
+            leftCol.appendChild(pairInput);
+            
+            div.appendChild(leftCol);
+            
+            // Partie centrale : checkbox correct
+            const centerCol = document.createElement("label");
+            centerCol.style.display = "flex";
+            centerCol.style.flexDirection = "column";
+            centerCol.style.alignItems = "center";
+            centerCol.style.gap = "4px";
+            centerCol.style.margin = "0";
+            centerCol.style.cursor = "pointer";
+            centerCol.style.userSelect = "none";
+            centerCol.className = "correct-checkbox-wrapper";
+            
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.name = `choix_correct_${index}`;
+            checkbox.checked = correct;
+            checkbox.style.width = "20px";
+            checkbox.style.height = "20px";
+            checkbox.style.cursor = "pointer";
+            
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = "Bonne";
+            labelSpan.style.fontSize = "0.75rem";
+            labelSpan.style.color = "var(--text-secondary)";
+            
+            centerCol.appendChild(checkbox);
+            centerCol.appendChild(labelSpan);
+            div.appendChild(centerCol);
+            
+            // Partie droite : bouton supprimer
+            const removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.style.background = "none";
+            removeBtn.style.border = "none";
+            removeBtn.style.color = "#ef4444";
+            removeBtn.style.cursor = "pointer";
+            removeBtn.style.fontSize = "1.1rem";
+            removeBtn.textContent = "✕";
+            removeBtn.addEventListener("click", function() {
+                // Maintenir au moins 1 choix
+                if (choicesContainer.querySelectorAll(".choice-row").length > 1) {
+                    div.remove();
+                } else {
+                    alert("Il faut au moins une option de réponse.");
+                }
+            });
+            div.appendChild(removeBtn);
+            
+            choicesContainer.appendChild(div);
+            adjustFormFields();
+        }
+        
+        function adjustFormFields() {
+            const currentType = typeSelect.value;
+            const rows = choicesContainer.querySelectorAll(".choice-row");
+            
+            rows.forEach(row => {
+                const pairInput = row.querySelector(".matching-pair-input");
+                const correctWrapper = row.querySelector(".correct-checkbox-wrapper");
+                
+                if (currentType === "matching") {
+                    pairInput.style.display = "block";
+                    pairInput.required = true;
+                    correctWrapper.style.display = "none";
+                } else if (currentType === "fill_blanks") {
+                    pairInput.style.display = "none";
+                    pairInput.required = false;
+                    correctWrapper.style.display = "flex";
+                    // For fill blanks, all inputs are correct answers
+                    correctWrapper.querySelector("input").checked = true;
+                } else {
+                    // multiple choice
+                    pairInput.style.display = "none";
+                    pairInput.required = false;
+                    correctWrapper.style.display = "flex";
+                }
+            });
+            
+            if (currentType === "multiple") {
+                infoText.textContent = "💡 Cochez la ou les cases 'Bonne' pour indiquer les réponses correctes que les participants doivent trouver.";
+                choicesSection.style.display = "block";
+            } else if (currentType === "matching") {
+                infoText.textContent = "💡 Saisissez l'élément de gauche et son élément correspondant de droite. Le système mélangera les paires lors du questionnaire.";
+                choicesSection.style.display = "block";
+            } else if (currentType === "fill_blanks") {
+                infoText.textContent = "💡 Ajoutez les mots ou expressions exactes attendus pour remplir les blancs du texte de la question (utilisez des crochets ou des blancs dans votre texte, ex: 'Le ciel est [bleu]').";
+                choicesSection.style.display = "block";
+            } else {
+                // open, wordcloud
+                choicesSection.style.display = "none";
+            }
+        }
+        
+        typeSelect.addEventListener("change", function() {
+            adjustFormFields();
+        });
+        
+        addChoiceBtn.addEventListener("click", function() {
+            createChoiceRow();
+        });
+        
+        // Initialiser avec 3 choix par défaut
+        createChoiceRow("Choix A", true);
+        createChoiceRow("Choix B", false);
+        createChoiceRow("Choix C", false);
+    });
+</script>
+{% endblock %}

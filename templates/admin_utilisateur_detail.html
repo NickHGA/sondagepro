@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}{{ utilisateur.username }} — Admin SondagePro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-nav {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 35px;
+        flex-wrap: wrap;
+    }
+    .admin-nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        color: var(--text-secondary);
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .admin-nav a:hover {
+        background: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+    }
+    .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    .profile-stat {
+        background: #f8fafc;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+    }
+    .profile-stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+    .profile-stat-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    .theme-section {
+        margin-bottom: 25px;
+    }
+    .theme-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        padding: 10px 0 8px 0;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 14px;
+    }
+    .reponse-item {
+        padding: 12px 16px;
+        border-radius: var(--radius-md);
+        background: #f8fafc;
+        border: 1px solid var(--border-color);
+        margin-bottom: 10px;
+    }
+    .reponse-question {
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 5px;
+    }
+    .reponse-valeur {
+        font-size: 0.95rem;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Retour + en-tête -->
+<div style="margin-bottom: 30px;">
+    <a href="{% url 'sondagepro:admin_utilisateurs' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">← Retour aux utilisateurs</a>
+    <div style="display: flex; align-items: center; gap: 18px; margin-top: 15px;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.4rem; font-weight: 700; flex-shrink: 0;">
+            {{ utilisateur.username|first|upper }}
+        </div>
+        <div>
+            <h1 style="margin: 0; font-size: 1.8rem;">{{ utilisateur.username }}</h1>
+            <p style="margin: 3px 0 0 0; color: var(--text-muted); font-size: 0.9rem;">{{ utilisateur.email|default:"Email non renseigné" }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation admin -->
+<nav class="admin-nav">
+    <a href="{% url 'sondagepro:admin_dashboard' %}">📊 Dashboard</a>
+    <a href="{% url 'sondagepro:admin_utilisateurs' %}">👥 Utilisateurs</a>
+    <a href="{% url 'sondagepro:admin_questionnaires' %}">📋 Questionnaires</a>
+    <a href="{% url 'sondagepro:resultats_global' %}">📈 Résultats globaux</a>
+</nav>
+
+<!-- Infos profil -->
+<div class="profile-grid">
+    <div class="profile-stat">
+        <div class="profile-stat-label">Poste</div>
+        <div class="profile-stat-value">{{ utilisateur.profile.poste.nom|default:"Non défini" }}</div>
+    </div>
+    <div class="profile-stat">
+        <div class="profile-stat-label">Tranche d'âge</div>
+        <div class="profile-stat-value">{{ utilisateur.profile.get_tranche_age_display }}</div>
+    </div>
+    <div class="profile-stat">
+        <div class="profile-stat-label">Expérience</div>
+        <div class="profile-stat-value">{{ utilisateur.profile.get_experience_display }}</div>
+    </div>
+    <div class="profile-stat">
+        <div class="profile-stat-label">Inscrit le</div>
+        <div class="profile-stat-value">{{ utilisateur.date_joined|date:"d/m/Y" }}</div>
+    </div>
+    <div class="profile-stat">
+        <div class="profile-stat-label">Réponses données</div>
+        <div class="profile-stat-value">{{ nb_reponses }}</div>
+    </div>
+</div>
+
+<!-- Réponses groupées -->
+<div class="card" style="padding: 30px;">
+    <h2 style="margin-top: 0; font-size: 1.2rem; margin-bottom: 25px;">Réponses aux questionnaires</h2>
+
+    {% if groupes %}
+        {% for q_titre, themes in groupes.items %}
+            <div style="margin-bottom: 30px;">
+                <h3 style="font-size: 1rem; color: var(--primary-color); border-left: 3px solid var(--primary-color); padding-left: 12px; margin-bottom: 18px;">
+                    📋 {{ q_titre }}
+                </h3>
+                {% for t_titre, reponses in themes.items %}
+                    <div class="theme-section">
+                        <div class="theme-title">📘 {{ t_titre }}</div>
+                        {% for rep in reponses %}
+                            <div class="reponse-item">
+                                <div class="reponse-question">{{ rep.question.texte }}</div>
+                                <div class="reponse-valeur">
+                                    {% if rep.choix %}
+                                        {{ rep.choix.texte }}
+                                    {% elif rep.reponse_texte %}
+                                        « {{ rep.reponse_texte }} »
+                                    {% else %}
+                                        <span style="color: var(--text-muted); font-style: italic;">Sans réponse</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <p style="margin: 0;">Cet utilisateur n'a encore répondu à aucun questionnaire.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Créer un Questionnaire - SondagePro{% endblock %}
+{% block content %}
+<div style="margin-bottom: 30px;">
+    <a href="{% url 'sondagepro:tableau_bord' %}" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+        ← Retour au tableau de bord
+    </a>
+    <h1 style="margin-top: 15px;">Créer un nouveau questionnaire</h1>
+</div>
+
+<div class="card" style="max-width: 600px; padding: 35px 30px;">
+    <form method="post">
+        {% csrf_token %}
+        
+        <div>
+            <label for="{{ form.titre.id_for_label }}">Titre du questionnaire</label>
+            {{ form.titre }}
+        </div>
+        
+        <div>
+            <label for="{{ form.description.id_for_label }}">Description / Instructions</label>
+            {{ form.description }}
+        </div>
+        
+
+        
+        <button type="submit" class="btn" style="margin-top: 15px; padding: 12px 24px; align-self: flex-start;">
+            Créer le questionnaire
+        </button>
+
+        {% if form.errors %}
+            <ul class="form-errors">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li><strong>{{ field.label }}</strong> : {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

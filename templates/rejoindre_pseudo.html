@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Pseudo - SondagePro{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 480px; margin: 60px auto; padding: 45px 35px; text-align: center;">
+    <div style="font-size: 3rem; margin-bottom: 15px;">👋</div>
+    <h2 style="margin-top: 0; margin-bottom: 8px; font-weight: 700; color: var(--text-primary);">
+        Prêt à répondre ?
+    </h2>
+    <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 30px;">
+        Sondage : <strong>{{ questionnaire.titre }}</strong>
+    </p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div style="text-align: left; margin-bottom: 25px;">
+            <label for="pseudo" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">
+            Nom d'utilisateur obligatoire pour répondre
+        </label>
+        <input type="text" id="pseudo" name="pseudo" required placeholder="Ex: Utilisateur123" autofocus
+
+        <button type="submit" class="btn" style="width: 100%; padding: 14px; font-size: 1.05rem; font-weight: 600; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); border: none; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.25);">
+            Commencer le sondage 🚀
+        </button>
+    </form>
+</div>
+{% endblock %}

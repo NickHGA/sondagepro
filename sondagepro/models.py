@@ -42,8 +42,8 @@ class Profile(models.Model):
     ]
     
     poste = models.ForeignKey(Poste, on_delete=models.SET_NULL, null=True, blank=True)
-    tranche_age = models.CharField(max_length=10, choices=TRANCHES_AGE, default='16_24')
-    experience = models.CharField(max_length=10, choices=EXPERIENCES, default='moins_1')
+    tranche_age = models.CharField(max_length=10, choices=TRANCHES_AGE, default='16_24', null=True, blank=True)
+    experience = models.CharField(max_length=10, choices=EXPERIENCES, default='moins_1', null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.poste.nom if self.poste else 'Poste non défini'}"
@@ -54,9 +54,22 @@ class Questionnaire(models.Model):
     titre = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     postes_cibles = models.ManyToManyField(Poste, related_name='questionnaires', blank=True)
+    code = models.CharField(max_length=8, unique=True, null=True, blank=True)
+    createur = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='questionnaires_crees')
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            import random
+            import string
+            while True:
+                new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                if not Questionnaire.objects.filter(code=new_code).exists():
+                    self.code = new_code
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.titre
+        return f"{self.titre} ({self.code or 'Sans code'})"
 
 
 class Theme(models.Model):
@@ -79,7 +92,8 @@ class Question(models.Model):
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE, related_name='questions')
     texte = models.CharField(max_length=255)
     type_question = models.CharField(max_length=20, choices=QUESTION_TYPES, default='multiple')
-    autoriser_autre = models.BooleanField(default=False)  # ✅ Nouveau champ
+    autoriser_autre = models.BooleanField(default=False)
+    temps_limite = models.PositiveIntegerField(default=0, help_text="Temps en secondes (0 = sans limite)")
 
     def __str__(self):
         return f"{self.texte} ({self.theme.titre})"
@@ -98,15 +112,14 @@ class Choix(models.Model):
 
 
 class Reponse(models.Model):
-    utilisateur = models.ForeignKey(User, on_delete=models.CASCADE)
+    utilisateur = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    pseudo = models.CharField(max_length=100, blank=True, null=True)
     question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True)
     choix = models.ForeignKey(Choix, on_delete=models.CASCADE, null=True, blank=True)
     reponse_texte = models.TextField(blank=True)
     date_reponse = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('utilisateur', 'question')
-
     def __str__(self):
         question_text = self.question.texte if self.question else "Question inconnue"
-        return f"{self.utilisateur.username} - {question_text}"
+        ident = self.utilisateur.username if self.utilisateur else (self.pseudo or "Anonyme")
+        return f"{ident} - {question_text}"
